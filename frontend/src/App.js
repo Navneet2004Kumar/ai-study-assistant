@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import axios from "axios";
 import "./App.css";
+
+const API_URL = process.env.REACT_APP_API_URL || "http://127.0.0.1:8000";
 
 function formatAnswer(text) {
   const lines = text.split("\n");
@@ -24,7 +26,6 @@ function formatAnswer(text) {
 }
 
 function App() {
-  const [darkMode, setDarkMode] = useState(false);
   const [file, setFile] = useState(null);
   const [fileName, setFileName] = useState("");
   const [uploadStatus, setUploadStatus] = useState("");
@@ -33,10 +34,6 @@ function App() {
   const [answer, setAnswer] = useState("");
   const [sources, setSources] = useState([]);
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    document.body.setAttribute("data-theme", darkMode ? "dark" : "light");
-  }, [darkMode]);
 
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
@@ -55,7 +52,7 @@ function App() {
     setUploading(true);
     setUploadStatus("");
     try {
-      const res = await axios.post("http://127.0.0.1:8000/upload", formData);
+      const res = await axios.post(`${API_URL}/upload`, formData);
       setUploadStatus(`success:PDF processed — ${res.data.chunks} chunks indexed`);
     } catch (err) {
       setUploadStatus("error:Upload failed. Please check the file and try again.");
@@ -70,7 +67,7 @@ function App() {
     setSources([]);
     try {
       const res = await axios.post(
-        `http://127.0.0.1:8000/ask?question=${encodeURIComponent(question)}`
+        `${API_URL}/ask?question=${encodeURIComponent(question)}`
       );
       setAnswer(res.data.answer);
       setSources(res.data.sources || []);
@@ -92,16 +89,11 @@ function App() {
     <div className="page">
       <div className="container">
         <header className="header">
-          <div className="header-left">
-            <div className="logo-badge">AI</div>
-            <div>
-              <h1>Study Assistant</h1>
-              <p className="subtitle">Ask questions about any PDF using AI-powered retrieval</p>
-            </div>
+          <div className="logo-badge">AI</div>
+          <div>
+            <h1>Study Assistant</h1>
+            <p className="subtitle">Ask questions about any PDF using AI-powered retrieval</p>
           </div>
-          <button className="theme-toggle" onClick={() => setDarkMode(!darkMode)}>
-            {darkMode ? "☀️ Light" : "🌙 Dark"}
-          </button>
         </header>
 
         <section className="card">
