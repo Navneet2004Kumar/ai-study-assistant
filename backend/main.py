@@ -1,7 +1,6 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pypdf import PdfReader
-from sentence_transformers import SentenceTransformer
 import faiss
 import numpy as np
 import google.generativeai as genai
@@ -20,8 +19,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-embedder = SentenceTransformer("all-MiniLM-L6-v2")
-
 chunks_store = []
 index = None
 
@@ -34,6 +31,25 @@ def chunk_text(text, chunk_size=500, overlap=50):
         chunks.append(chunk)
         i += chunk_size - overlap
     return chunks
+
+def get_embeddings(texts):
+    embeddings = []
+    for text in texts:
+        result = genai.embed_content(
+            model="models/gemini-embedding-001",
+            content=text,
+            task_type="retrieval_document"
+        )
+        embeddings.append(result["embedding"])
+    return np.array(embeddings).astype("float32")
+
+def get_query_embedding(text):
+    result = genai.embed_content(
+        model="models/gemini-embedding-001",
+        content=text,
+        task_type="retrieval_query"
+    )
+    return np.array([result["embedding"]]).astype("float32")
 
 @app.get("/")
 def read_root():
@@ -52,8 +68,7 @@ async def upload_pdf(file: UploadFile = File(...)):
         raise HTTPException(status_code=400, detail="No text found in PDF")
 
     chunks_store = chunk_text(full_text)
-    embeddings = embedder.encode(chunks_store)
-    embeddings = np.array(embeddings).astype("float32")
+    embeddings = get_embeddings(chunks_store)
 
     index = faiss.IndexFlatL2(embeddings.shape[1])
     index.add(embeddings)
@@ -67,7 +82,7 @@ async def ask_question(question: str):
     if index is None:
         raise HTTPException(status_code=400, detail="Upload a PDF first")
 
-    q_embedding = embedder.encode([question]).astype("float32")
+    q_embedding = get_query_embedding(question)
     k = 3
     distances, indices = index.search(q_embedding, k)
     relevant_chunks = [chunks_store[i] for i in indices[0]]
