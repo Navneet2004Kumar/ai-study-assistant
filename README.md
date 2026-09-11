@@ -6,7 +6,7 @@
 [![Python](https://img.shields.io/badge/Backend-Python-3776AB?logo=python\&logoColor=white)]()
 [![FastAPI](https://img.shields.io/badge/API-FastAPI-009688?logo=fastapi\&logoColor=white)]()
 [![RAG](https://img.shields.io/badge/AI-RAG-purple)]()
-[![Gemini](https://img.shields.io/badge/LLM-Gemini-blue)]()
+
 
 
 
